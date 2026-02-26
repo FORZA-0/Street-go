@@ -2,70 +2,125 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sokak Görevi v2.1</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sokak Görevi v2.1 (Kamera)</title>
     <style>
-        body { font-family: sans-serif; background: #000; color: #00ff41; text-align: center; margin: 0; padding: 20px; }
-        .card { border: 2px solid #00ff41; border-radius: 15px; padding: 20px; margin-top: 20px; background: #111; }
-        #gorev-metni { font-size: 20px; margin: 20px 0; min-height: 100px; color: #fff; font-weight: bold; border-top: 1px solid #333; padding-top: 15px; }
-        button { background: #00ff41; color: #000; border: none; padding: 15px; width: 100%; border-radius: 10px; font-size: 16px; font-weight: bold; margin-bottom: 10px; cursor: pointer; }
-        #yaptim-btn { background: #ff00ff; color: #fff; display: none; }
-        .odul-alani { display: none; background: #222; border: 2px dashed #ff00ff; padding: 15px; color: #ff00ff; margin-top: 15px; font-weight: bold; }
+        body { font-family: sans-serif; background-color: #121212; color: white; text-align: center; padding: 20px; }
+        .card { border: 2px solid #00ff41; padding: 20px; border-radius: 15px; background: rgba(0,255,65,0.1); max-width: 400px; margin: auto; box-shadow: 0 0 15px #00ff41; }
+        h1 { color: #00ff41; text-transform: uppercase; letter-spacing: 2px; }
+        #konum-durum { font-size: 14px; margin-bottom: 15px; color: #aaa; }
+        #gorev-metni { font-size: 20px; font-weight: bold; margin: 20px 0; min-height: 50px; text-shadow: 0 0 5px #00ff41; }
+        button { background: #00ff41; color: black; border: none; padding: 12px 24px; font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer; transition: 0.3s; margin: 10px; text-transform: uppercase; }
+        button:hover { background: #00ff41; box-shadow: 0 0 10px #00ff41; }
+        #kamera-alanı { display: none; margin-top: 20px; }
+        video { width: 100%; border-radius: 10px; border: 2px solid #00ff41; }
+        #kanit-resmi { width: 100%; border-radius: 10px; border: 2px solid #00ff41; display: none; margin-top: 10px; }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <h2 style="letter-spacing: 2px;">SİSTEM AKTİF</h2>
-        <div id="konum-durum" style="font-size: 12px; color: #666;">Sinyal bekleniyor...</div>
+        <h1>Agent System</h1>
+        <div id="konum-durum">🔴 Konum aranıyor...</div>
         
-        <div id="gorev-metni">Görevi başlatmak için butona bas aga.</div>
-        
-        <button onclick="yeniGorev()">GÖREV TARA</button>
-        <button id="yaptim-btn" onclick="tamamla()">GÖREVİ YAPTIM!</button>
+        <p>Sıradaki Görevin:</p>
+        <div id="gorev-metni">Konum izni ver ve görevi başlat!</div>
 
-        <div id="odul-alani" class="odul-alani"></div>
+        <button onclick="yeniGorev()" id="yeni-btn">Yeni Görev İste</button>
+        <button onclick="kameraAc()" id="yaptim-btn" style="display: none; background: #ff00ff; color: white;">Görevi Tamamladım</button>
+
+        <div id="kamera-alanı">
+            <video id="video" autoplay playsinline></video>
+            <button onclick="fotografCek()" id="cek-btn">Fotoğraf Çek</button>
+            <canvas id="canvas" style="display: none;"></canvas>
+            <img id="kanit-resmi" alt="Kanıt">
+        </div>
+
     </div>
 
     <script>
         const gorevler = [
-            "En yakın ağaca 'Senin oksijenin bir başka aga' de.",
-            "Yoldaki beyaz çizgi üzerinde 5 adım dengeli yürü.",
-            "Gördüğün ilk tabelayı tersten oku.",
-            "Havaya bakıp 'Bulutlar bugün çok hızı' diye mırıldan.",
-            "Olduğun yerde 360 derece dön ve 'Sistem yüklendi' de."
+            "🔴 Git ve en yakın kırmızı arabaya dokun.",
+            "🌳 Bir ağaca sarıl ve fotoğraf çek.",
+            "🔍 Sokakta kaybolmuş bir eşya bul (çöp değil).",
+            "🏢 En yüksek binanın fotoğrafını çek.",
+            "🐱 Bir sokak hayvanına su/yemek ver.",
+            "🚶‍♂️ 100 metre geri geri yürü.",
+            "🧘‍♂️ Bir parkta 1 dakika meditasyon yap.",
+            "📸 Sokakta bir yabancıdan 'Ajanım' diyerek selam iste."
         ];
 
-        const oduller = [
-            "TEBRİKLER! 5 Dakika bedava oturma hakkı kazandın.",
-            "HEDİYE: Bugün bir kedi sevme lisansın açıldı.",
-            "KUPON: Bir sonraki içtiğin su %5 daha tatlı olacak.",
-            "BONUS: Akşam yemeğinde ekstra lezzet puanı kazandın!",
-            "KRAL: Telefonuna 10 saniye bakmama ödülü senin."
-        ];
+        let sonGorev = null;
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const resim = document.getElementById('kanit-resmi');
 
+        // 1. Konum İzni ve Takibi
+        if ("geolocation" in navigator) {
+            navigator.geolocation.watchPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude.toFixed(4);
+                    const lon = pos.coords.longitude.toFixed(4);
+                    document.getElementById('konum-durum').innerHTML = `🟢 Saha Konumu: ${lat}, ${lon}`;
+                    document.getElementById('konum-durum').style.color = "#00ff41";
+                },
+                (err) => {
+                    document.getElementById('konum-durum').innerText = "🔴 Konum İzni Reddedildi!";
+                    document.getElementById('konum-durum').style.color = "#ff4141";
+                },
+                { enableHighAccuracy: true, timeout: 5000 }
+            );
+        }
+
+        // 2. Yeni Görev İsteme
         function yeniGorev() {
-            // Konum izni denemesi
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition((pos) => {
-                    document.getElementById('konum-durum').innerText = "📍 Konum OK: " + pos.coords.latitude.toFixed(2);
+            let rastgeleGorev;
+            do {
+                rastgeleGorev = gorevler[Math.floor(Math.random() * gorevler.length)];
+            } while (rastgeleGorev === sonGorev);
+            
+            sonGorev = rastgeleGorev;
+            document.getElementById('gorev-metni').innerText = rastgeleGorev;
+            
+            // "Yaptım" butonunu aç, kamera alanını gizle
+            document.getElementById('yaptim-btn').style.display = "inline-block";
+            document.getElementById('kamera-alanı').style.display = "none";
+            document.getElementById('yeni-btn').style.display = "none";
+            resim.style.display = "none";
+            kameraKapat();
+        }
+
+        // 3. Kamera Açma
+        function kameraAc() {
+            document.getElementById('kamera-alanı').style.display = "block";
+            document.getElementById('yaptim-btn').style.display = "none";
+            
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+                .then(stream => {
+                    video.srcObject = stream;
+                })
+                .catch(err => {
+                    alert("Kamera izni ver aga! (Ayarlardan)");
                 });
-            }
-
-            const r = Math.floor(Math.random() * gorevler.length);
-            document.getElementById('gorev-metni').innerText = "GÖREV: " + gorevler[r];
-            document.getElementById('yaptim-btn').style.display = 'block';
-            document.getElementById('odul-alani').style.display = 'none';
         }
 
-        function tamamla() {
-            const r = Math.floor(Math.random() * oduller.length);
-            const odulKutusu = document.getElementById('odul-alani');
-            odulKutusu.innerHTML = "🎁 ÖDÜLÜN:<br>" + oduller[r];
-            odulKutusu.style.display = 'block';
-            document.getElementById('yaptim-btn').style.display = 'none';
-            document.getElementById('gorev-metni').innerText = "GÖREV TAMAMLANDI!";
+        // 4. Fotoğraf Çekme
+        function fotografCek() {
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const imageData = canvas.toDataURL('image/png');
+            resim.src = imageData;
+            resim.style.display = "block";
+            
+            kameraKapat();
+            document.getElementById('kamera-alanı').style.display = "none";
+            document.getElementById('yeni-btn').style.display = "inline-block";
+            
+            alert("⚠️ KANIT KAYDEDİLDİ. GÖREV TAMAMLANDI. ⚠️");
         }
-    </script>
-</body>
-</html>
+
+        function
+            
