@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sokak Görevi v2.1</title>
+    <style>
+        body { font-family: sans-serif; background: #000; color: #00ff41; text-align: center; margin: 0; padding: 20px; }
+        .card { border: 2px solid #00ff41; border-radius: 15px; padding: 20px; margin-top: 20px; background: #111; }
+        #gorev-metni { font-size: 20px; margin: 20px 0; min-height: 100px; color: #fff; font-weight: bold; border-top: 1px solid #333; padding-top: 15px; }
+        button { background: #00ff41; color: #000; border: none; padding: 15px; width: 100%; border-radius: 10px; font-size: 16px; font-weight: bold; margin-bottom: 10px; cursor: pointer; }
+        #yaptim-btn { background: #ff00ff; color: #fff; display: none; }
+        .odul-alani { display: none; background: #222; border: 2px dashed #ff00ff; padding: 15px; color: #ff00ff; margin-top: 15px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2 style="letter-spacing: 2px;">SİSTEM AKTİF</h2>
+        <div id="konum-durum" style="font-size: 12px; color: #666;">Sinyal bekleniyor...</div>
+        
+        <div id="gorev-metni">Görevi başlatmak için butona bas aga.</div>
+        
+        <button onclick="yeniGorev()">GÖREV TARA</button>
+        <button id="yaptim-btn" onclick="tamamla()">GÖREVİ YAPTIM!</button>
+
+        <div id="odul-alani" class="odul-alani"></div>
+    </div>
+
+    <script>
+        const gorevler = [
+            "En yakın ağaca 'Senin oksijenin bir başka aga' de.",
+            "Yoldaki beyaz çizgi üzerinde 5 adım dengeli yürü.",
+            "Gördüğün ilk tabelayı tersten oku.",
+            "Havaya bakıp 'Bulutlar bugün çok hızı' diye mırıldan.",
+            "Olduğun yerde 360 derece dön ve 'Sistem yüklendi' de."
+        ];
+
+        const oduller = [
+            "TEBRİKLER! 5 Dakika bedava oturma hakkı kazandın.",
+            "HEDİYE: Bugün bir kedi sevme lisansın açıldı.",
+            "KUPON: Bir sonraki içtiğin su %5 daha tatlı olacak.",
+            "BONUS: Akşam yemeğinde ekstra lezzet puanı kazandın!",
+            "KRAL: Telefonuna 10 saniye bakmama ödülü senin."
+        ];
+
+        function yeniGorev() {
+            // Konum izni denemesi
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    document.getElementById('konum-durum').innerText = "📍 Konum OK: " + pos.coords.latitude.toFixed(2);
+                });
+            }
+
+            const r = Math.floor(Math.random() * gorevler.length);
+            document.getElementById('gorev-metni').innerText = "GÖREV: " + gorevler[r];
+            document.getElementById('yaptim-btn').style.display = 'block';
+            document.getElementById('odul-alani').style.display = 'none';
+        }
+
+        function tamamla() {
+            const r = Math.floor(Math.random() * oduller.length);
+            const odulKutusu = document.getElementById('odul-alani');
+            odulKutusu.innerHTML = "🎁 ÖDÜLÜN:<br>" + oduller[r];
+            odulKutusu.style.display = 'block';
+            document.getElementById('yaptim-btn').style.display = 'none';
+            document.getElementById('gorev-metni').innerText = "GÖREV TAMAMLANDI!";
+        }
+    </script>
+</body>
+</html>
